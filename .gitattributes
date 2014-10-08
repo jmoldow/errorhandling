@@ -1,0 +1,3 @@
+*.tex text eol=lf   diff=tex
+*.pdf               -diff
+*.jpg               -diff

@@ -1,0 +1,103 @@
+\documentclass{beamer}
+\setbeamercovered{transparent}%{invisible}
+\usepackage{listings}
+\usepackage{textcomp, fontenc, inputenc}
+\renewcommand{\ttdefault}{pcr}
+
+\AtBeginSection{\frame{\sectionpage\tableofcontents[currentsection]}}
+\AtBeginSubsection{\frame{\subsectionpage\tableofcontents[currentsubsection]}}
+
+\usecolortheme{albatross}
+\usebackgroundtemplate%
+{%
+  \includegraphics[width=\paperwidth,height=\paperheight]{box.jpg}%
+}
+
+\lstset{
+  language=Scala,
+  showlines=true,
+  basicstyle=\small\ttfamily\color{black},
+  rulesepcolor=\color{black},
+  backgroundcolor=\color{yellow!10},
+  identifierstyle=\color{black},
+  keywordstyle=\bfseries\color{blue},
+  stringstyle=\color{teal},
+  commentstyle=\itshape\color{red},
+  showstringspaces=false,
+  numbers=left,
+  firstnumber=1,
+  numberstyle=\color{white},
+  columns=fixed,
+  keepspaces=true,
+  frame=tlb,
+  tabsize=2,
+  extendedchars=true,
+  resetmargins=true,
+  breaklines=true,
+}
+
+\renewcommand{\subject}{Handling errors without exceptions}
+\title{\textit{Functional Programming in Scala}}
+\subtitle{%
+  Chapter 4\\%
+  \subject%
+}
+\author{Jordan Moldow}
+\date{Oct. 9, 2014}
+
+\begin{document}
+
+{
+\usebackgroundtemplate%
+{%
+  \includegraphics[width=\paperwidth,height=\paperheight]{box-title.jpg}%
+}
+\frame{\titlepage}
+}
+
+\begin{frame}
+\frametitle{\subject}
+\tableofcontents
+\end{frame}
+
+\section{The good and bad aspects of exceptions}
+
+\section{Possible alternatives to exceptions}
+
+\section{The Option data type}
+
+\begin{frame}[fragile]
+\frametitle{\secname}
+\begin{lstlisting}
+sealed trait Option[+A] {
+  def map[B](f: A => B): Option[B]
+
+  def getOrElse[B>:A](default: => B): B
+
+  def flatMap[B](f: A => Option[B]): Option[B]
+
+  def orElse[B>:A](ob: => Option[B]): Option[B]
+
+  def filter(f: A => Boolean): Option[A]
+}
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+\end{lstlisting}
+\end{frame}
+
+\subsection{Usage patterns for Option - the Option functor}
+
+\subsection{Option composition and lifting - the monad laws}
+
+\subsection{Wrapping exception-oriented APIs}
+
+\section{The Either data type}
+
+\section{Exercises}
+
+\section{Summary}
+
+\begin{frame}{\secname}
+\end{frame}
+
+\end{document}
