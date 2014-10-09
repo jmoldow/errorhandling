@@ -203,10 +203,10 @@ def mean(xs: IndexedSeq[Double], onEmpty: Double): Double =
 \end{center}
 \end{frame}
 
-\section{The Option data type}
+\section{The {\ttfamily Option} data type}
 
 \begin{frame}[fragile,t]
-  \frametitle{Option 4 - The Option data type}
+  \frametitle{Option 4 - The {\ttfamily Option} data type}
 \begin{lstlisting}
 sealed trait Option[+A]
 case class Some[+A](get: A) extends Option[A]
@@ -236,12 +236,18 @@ case object None extends Option[Nothing]
         \item {\ttfamily None} $\not\in$ {\ttfamily A}
         \item Can't return {\ttfamily None} from function that returns an {\ttfamily A}
       \end{itemize}
-    \item Every usage of {\ttfamily None} must be assigned to a specific type
+    \item For arbitrary polymorphic types {\ttfamily A}, {\ttfamily B}:
       \begin{itemize}
-        \item {\ttfamily None:Option[A]} $\neq$ {\ttfamily None:Option[B]}, {\ttfamily None:Option[A]} $\not\in$ {\ttfamily Option[B]}
-        %\item Just as {\ttfamily Nil:List[A]} $\neq$ {\ttfamily Nil:List[B]}, {\ttfamily Nil:List[A]} $\not\in$ {\ttfamily List[B]}
+        \item {\ttfamily None:Option[A]} $\neq$ {\ttfamily None:Option[B]}
+        \item {\ttfamily None:Option[A]} $\not\in$ {\ttfamily Option[B]}
+        \item This isn't true if one type is a subclass of the other
       \end{itemize}
+      %\item Just as {\ttfamily Nil:List[A]} $\neq$ {\ttfamily Nil:List[B]}, {\ttfamily Nil:List[A]} $\not\in$ {\ttfamily List[B]}
     \item Type system prevents null pointer dereference
+      \begin{itemize}
+        \item Because of use of case class, {\ttfamily op.get} won't compile unless {\ttfamily op} is statically guaranteed to be {\ttfamily Some(a)}
+        \item Unfortunately, this isn't true of Scala's builtin {\ttfamily Option}
+      \end{itemize}
   \end{itemize}
 \end{frame}
 
@@ -259,10 +265,10 @@ case object None extends Option[Nothing]
   \end{itemize}
 \end{frame}
 
-\subsection{Usage patterns for Option - the Option functor}
+\subsection{Usage patterns for {\ttfamily Option} - the {\ttfamily Option} functor}
 
 \begin{frame}[fragile,t]
-\frametitle{Usage patterns for Option}
+  \frametitle{Usage patterns for {\ttfamily Option}}
 \begin{lstlisting}
 sealed trait Option[+A] {
   // Apply f if the Option is not None.
@@ -305,7 +311,7 @@ sealed trait Option[+A] {
   def flatMap[B](f: A => Option[B]): Option[B] =
     map(f) getOrElse None
 
-  def orElse[B>:A](ob: => Option[B]): Option[B]
+  def orElse[B>:A](ob: => Option[B]): Option[B] =
     map(Some(_)) getOrElse ob
 
   def filter(f: A => Boolean): Option[A] = {
@@ -318,7 +324,7 @@ case object None extends Option[Nothing]
 \end{frame}
 
 \begin{frame}[fragile,t]
-\frametitle{Usage scenarios for Option}
+  \frametitle{Usage scenarios for {\ttfamily Option}}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -336,7 +342,7 @@ case object None extends Option[Nothing]
 \end{frame}
 
 \begin{frame}[fragile,t]
-\frametitle{Usage patterns for Option}
+  \frametitle{Usage patterns for {\ttfamily Option}}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -392,7 +398,7 @@ if employee is not None:
 \end{frame}
 
 \begin{frame}[fragile,t]
-  \frametitle{The Option functor}
+  \frametitle{The {\ttfamily Option} functor}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -402,8 +408,11 @@ case class Some[+A](get: A) extends Option[A]
 case object None extends Option[Nothing]
 \end{lstlisting}
   \begin{center}
-    \includegraphics[scale=0.20]{boxfunctor.png}
+    \includegraphics[scale=0.15]{boxfunctor.png}
   \end{center}
+  {\ttfamily g: A => B},\quad {\ttfamily f: B => C}
+
+  {\ttfamily f compose g = ((a:A) => f(g(a)))}
   \begin{enumerate}
     \item {\ttfamily map identity = identity}
     \item {\ttfamily map (f compose g) = (map f) compose (map g)}
@@ -411,10 +420,10 @@ case object None extends Option[Nothing]
   More in chapter 10!
 \end{frame}
 
-\subsection{Option composition and lifting - the monad laws}
+\subsection{{\ttfamily Option} composition and lifting - the monad laws}
 
 \begin{frame}[fragile,t]
-  \frametitle{Option composition - Exercise 4.3}
+  \frametitle{{\ttfamily Option} composition - Exercise 4.3}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -435,12 +444,13 @@ def map3[A,B,C,D](a:Option[A],b:Option[B],c:Option[C])
 \begin{lstlisting}
 map2(a,b)(f) = a flatMap (aa => b map (bb => f(aa, bb)))
 flatMap2(a,b)(f) = a flatMap (aa => b flatMap (bb => f(aa, bb)))
-map3(a,b,c)(f) = a flatMap (aa => b flatMap(bb => c map (cc => f(aa, bb, cc))))
+map3(a,b,c)(f) = a flatMap (aa => b flatMap{bb =>
+                        c map (cc => f(aa, bb, cc)}))
 \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile,t]
-  \frametitle{Option lifting}
+  \frametitle{{\ttfamily Option} lifting}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -457,13 +467,13 @@ def flatLift[A,B](f: A => Option[B]): Option[A] => Option[B] =
 \begin{itemize}
   \item Take ordinary functions, and lift them to functions on {\ttfamily Option}
   \item Can design API of {\ttfamily A => B}, {\ttfamily A => Option[B]} functions
-  \item Don't about writing all your functions to accept {\ttfamily Option[A]}
-  \item Can lift buildin Java, Scala functions
+  \item Don't need all your functions to accept {\ttfamily Option[A]}
+  \item Can lift builtin Java, Scala functions
 \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile,t]
-  \frametitle{Option lifting}
+  \frametitle{{\ttfamily Option} lifting}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -485,7 +495,7 @@ val absO: Option[Double] => Option[Double] = lift(math.abs)
 \end{frame}
 
 \begin{frame}[fragile,t]
-  \frametitle{Option monad}
+  \frametitle{{\ttfamily Option} monad}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -505,7 +515,7 @@ val return = unit
 \end{frame}
 
 \begin{frame}[fragile,t]
-  \frametitle{Option monad}
+  \frametitle{{\ttfamily Option} monad}
 \begin{lstlisting}
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B]
@@ -519,11 +529,20 @@ def unit[A](a: A): Option[A] =
   Some(a)
 val return = unit
 \end{lstlisting}
-{\ttfamily unit(aa) bind f == f(aa)}
+{\ttfamily aa: A},\quad {\ttfamily a: Option[A]}
 
-{\ttfamily a bind unit == a}
+{\ttfamily g: A => Option[B]},\quad {\ttfamily f: B => Option[C]}
 
-{\ttfamily a bind (aa=>f(aa) bind g) == (a bind f) bind g}
+{\ttfamily f composeM g = ((aa:A) => g(aa) bind f)}
+
+\begin{itemize}
+  \item {\ttfamily unit(aa) bind f == f(aa)}
+
+  \item {\ttfamily a bind unit == a}
+
+  \item {\ttfamily a bind (f composeM g) == (a bind f) bind g}
+\end{itemize}
+More in chapter 11!
 \end{frame}
 
 \subsection{Wrapping exception-oriented APIs}
@@ -540,11 +559,96 @@ def Try[A](a: => A): Option[A] =
 \end{lstlisting}
 \end{frame}
 
-\section{The Either data type}
+\section{The {\ttfamily Either} data type}
+
+\begin{frame}[fragile,t]
+  \frametitle{\secname}
+\begin{lstlisting}
+sealed trait Either[+E, +A]
+case class Left[+E](value: E) extends Either[E, Nothing]
+case class Right[+A](value: A) extends Either[Nothing, A]
+
+def mean(xs: IndexedSeq[Double]): Either[String, Double] =
+  if (xs.isEmpty) Left("mean of empty list!")
+  else Right(xs.sum / xs.length)
+
+def Try[A](a: => A): Either[Exception, A] =
+  try Right(a)
+  catch { case e: Exception => Left(e) }
+
+def safeDiv(x: Int, y: Int): Either[Exception, Int] =
+  Try(x / y)
+\end{lstlisting}
+\begin{itemize}
+  \item Allows us to track error info
+  \item {\itshape Disjoint union} of two types
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile,t]
+  \frametitle{\secname}
+\begin{lstlisting}
+sealed trait Either[+E, +A] {
+  def map[B](f: A => B): Either[E, B]
+  def flatMap[EE >: E, B](f: A => Either[EE, B]): Either[EE, B]
+  def orElse[EE >: E,B >: A](b: => Either[EE, B]): Either[EE, B]
+  val bind = flatMap
+}
+case class Left[+E](value: E) extends Either[E, Nothing]
+case class Right[+A](value: A) extends Either[Nothing, A]
+
+def unit[E, A](a: A): Either[E, A] =
+  Right(a)
+val return = unit
+\end{lstlisting}
+{\ttfamily Either[E, A]} is a functor / monad in its right type parameter
+\end{frame}
 
 \section{Exercises}
 
 \begin{frame}{\secname}
+  \begin{itemize}
+    \item {\tiny https://github.com/fpinscala/fpinscala/tree/master/exercises/src/main/scala/fpinscala/errorhandling}
+    \item {\tiny https://github.com/fpinscala/fpinscala/tree/master/answerkey/errorhandling}
+    \item {\tiny https://github.com/fpinscala/fpinscala/tree/master/answers/src/main/scala/fpinscala/errorhandling}
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}
+  \frametitle{\secname}
+  Within type system, we can achieve the good aspects of exceptions:
+  \begin{itemize}
+    \item Consolidate, centralize error-handling logic
+    \item Error info (messages, stack traces, memory dumps)
+    \item Exception subclasses
+    \item Functions don't have to handle callee errors
+  \end{itemize}
+  Key ideas:
+  \begin{itemize}
+    \item Use container type to expand codomain (range) of functions
+    \item Return errors as values
+    \item Use higher-order functions to
+      \begin{itemize}
+        \item consolidate of error handling logic
+        \item preserve composability
+        \item ``lift'' normal functions to error handling functions
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section*{Conclusion}
+
+\begin{frame}
+  \frametitle{\secname}
+  Questions?
+
+  \bigskip
+  Please post questions, exercise solutions, discussions on Jive
+
+  \bigskip
+  Next week: Chapter 5 - Strictness and laziness
 \end{frame}
 
 \end{document}
