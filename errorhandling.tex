@@ -331,7 +331,7 @@ case class Some[+A](get: A) extends Option[A]
 case object None extends Option[Nothing]
 \end{lstlisting}
 \begin{center}
-\includegraphics[scale=.17]{option-usage.png}
+\includegraphics[scale=.15]{option-usage.png}
 \end{center}
 \end{frame}
 
@@ -404,17 +404,145 @@ case object None extends Option[Nothing]
   \begin{center}
     \includegraphics[scale=0.20]{boxfunctor.png}
   \end{center}
+  \begin{enumerate}
+    \item {\ttfamily map identity = identity}
+    \item {\ttfamily map (f compose g) = (map f) compose (map g)}
+  \end{enumerate}
+  More in chapter 10!
 \end{frame}
 
 \subsection{Option composition and lifting - the monad laws}
 
+\begin{frame}[fragile,t]
+  \frametitle{Option composition - Exercise 4.3}
+\begin{lstlisting}
+sealed trait Option[+A] {
+  def map[B](f: A => B): Option[B]
+  def flatMap[B](f: A => Option[B]): Option[B]
+}
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+
+
+// Return None if any input is None.
+// Otherwise, apply the function to the values.
+def map2[A,B,C](a:Option[A],b:Option[B])(f:(A,B)=>C):Option[C]
+def flatMap2[A,B,C](a:Option[A],b:Option[B])(f:(A,B)=>Option[C]):Option[C]
+def map3[A,B,C,D](a:Option[A],b:Option[B],c:Option[C])
+                 (f:(A,B,C)=>D):Option[D]
+\end{lstlisting}
+\pause
+\begin{lstlisting}
+map2(a,b)(f) = a flatMap (aa => b map (bb => f(aa, bb)))
+flatMap2(a,b)(f) = a flatMap (aa => b flatMap (bb => f(aa, bb)))
+map3(a,b,c)(f) = a flatMap (aa => b flatMap(bb => c map (cc => f(aa, bb, cc))))
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile,t]
+  \frametitle{Option lifting}
+\begin{lstlisting}
+sealed trait Option[+A] {
+  def map[B](f: A => B): Option[B]
+  def flatMap[B](f: A => Option[B]): Option[B]
+}
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+
+def lift[A,B](f: A => B): Option[A] => Option[B] =
+  _ map f
+def flatLift[A,B](f: A => Option[B]): Option[A] => Option[B] =
+  _ flatMap f
+\end{lstlisting}
+\begin{itemize}
+  \item Take ordinary functions, and lift them to functions on {\ttfamily Option}
+  \item Can design API of {\ttfamily A => B}, {\ttfamily A => Option[B]} functions
+  \item Don't about writing all your functions to accept {\ttfamily Option[A]}
+  \item Can lift buildin Java, Scala functions
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile,t]
+  \frametitle{Option lifting}
+\begin{lstlisting}
+sealed trait Option[+A] {
+  def map[B](f: A => B): Option[B]
+  def flatMap[B](f: A => Option[B]): Option[B]
+}
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+
+def lift[A,B](f: A => B): Option[A] => Option[B] =
+  _ map f
+def flatLift[A,B](f: A => Option[B]): Option[A] => Option[B] =
+  _ flatMap f
+
+val absO: Option[Double] => Option[Double] = lift(math.abs)
+\end{lstlisting}
+\begin{center}
+  \includegraphics[scale=.13]{lift.png}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile,t]
+  \frametitle{Option monad}
+\begin{lstlisting}
+sealed trait Option[+A] {
+  def map[B](f: A => B): Option[B]
+  def flatMap[B](f: A => Option[B]): Option[B]
+  val bind = flatMap
+}
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+
+def unit[A](a: A): Option[A] =
+  Some(a)
+val return = unit
+\end{lstlisting}
+\begin{center}
+\includegraphics[scale=.35]{monad.png}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile,t]
+  \frametitle{Option monad}
+\begin{lstlisting}
+sealed trait Option[+A] {
+  def map[B](f: A => B): Option[B]
+  def flatMap[B](f: A => Option[B]): Option[B]
+  val bind = flatMap
+}
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+
+def unit[A](a: A): Option[A] =
+  Some(a)
+val return = unit
+\end{lstlisting}
+{\ttfamily unit(aa) bind f == f(aa)}
+
+{\ttfamily a bind unit == a}
+
+{\ttfamily a bind (aa=>f(aa) bind g) == (a bind f) bind g}
+\end{frame}
+
 \subsection{Wrapping exception-oriented APIs}
+
+\begin{frame}[fragile]
+  \frametitle{\subsecname}
+\begin{lstlisting}
+// We accept the A argument non-strictly,
+// so we can catch any exceptions that
+// occur while evaluating a and convert them to None.
+def Try[A](a: => A): Option[A] =
+  try Some(a)
+  catch { case e: Exception => None }
+\end{lstlisting}
+\end{frame}
 
 \section{The Either data type}
 
 \section{Exercises}
-
-\section{Summary}
 
 \begin{frame}{\secname}
 \end{frame}
